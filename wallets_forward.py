@@ -26,7 +26,9 @@ No primeiro registro de cada mês (UTC) baixa-se o ranking público e forma-se u
 Empates são desfeitos pelo endereço (ordem alfabética). Cada coorte é acompanhada por TRACK_DAYS dias.
 
 O QUE É ANOTADO
-A cada execução, para cada carteira de uma coorte ativa: saldo da conta, valor total das posições e cada posição
+No máximo um registro por hora cheia (UTC). A tarefa agendada tenta várias vezes por hora, porque o agendador
+gratuito do GitHub atrasa e pula execuções; a tentativa que cai numa hora já anotada não grava nada.
+Em cada registro, para cada carteira de uma coorte ativa: saldo da conta, valor total das posições e cada posição
 (moeda, tamanho com sinal, preço médio de entrada, valor, resultado não realizado). Para as moedas com posição:
 preço médio do livro, preço de marcação, preço do oráculo e funding da hora. Cada registro traz o hash do anterior;
 editar ou apagar um registro antigo quebra a cadeia (--verify acusa).
@@ -68,6 +70,7 @@ TRACK_DAYS = 90
 MAX_WEIGHT = 5.0                        # usado só na avaliação (teto de exposição do robô)
 GROUPS = ("W", "R", "C")
 DAY = 86400
+HOUR = 3600
 UA = {"User-Agent": "Mozilla/5.0 (wallets_forward)", "Accept": "application/json"}
 
 
@@ -320,7 +323,8 @@ def take_tick(root, net, now):
 
 
 def run_tick(root=None, net=None, now=None):
-    """Uma execução: forma a coorte do mês se ainda não existe e anota as posições. Nunca estende uma cadeia quebrada."""
+    """Uma execução: forma a coorte do mês se ainda não existe e anota as posições. Nunca estende uma cadeia
+    quebrada. Devolve (None, None), sem gravar nada, se já existe um registro de posições nesta hora cheia (UTC)."""
     root = root_dir(root)
     now = time.time() if now is None else now
     if now < SEALED_END:
@@ -332,8 +336,12 @@ def run_tick(root=None, net=None, now=None):
     index = read_index(root)
     if index and now <= index[-1]["ts"]:
         raise RuntimeError("relógio andou para trás em relação ao último registro")
+    need_cohort = month_id(now) not in {c["cohort"] for c in cohorts(root)}
+    last_tick = next((x for x in reversed(index) if x["kind"] == "tick"), None)
+    if not need_cohort and last_tick is not None and int(last_tick["ts"] // HOUR) == int(now // HOUR):
+        return None, None                         # já existe um registro nesta hora cheia (UTC)
     formed = None
-    if month_id(now) not in {c["cohort"] for c in cohorts(root)}:
+    if need_cohort:
         formed = form_cohort(root, net, now)
         now = max(now, formed["ts"]) + 1          # o registro das posições vem depois da coorte
     tick = take_tick(root, net, now)
@@ -374,6 +382,9 @@ def main(argv=None):
         print(json.dumps(status(), ensure_ascii=False, indent=1))
         return 0
     formed, tick = run_tick()
+    if tick is None:
+        print("sem novo registro: já existe um nesta hora (UTC)")
+        return 0
     if formed:
         print(f"coorte {formed['cohort']} formada: {formed['n_eligible']} elegíveis em {formed['n_rows']} linhas; grupos "
               + ", ".join(f"{g}={len(formed['groups'][g])}" for g in GROUPS))

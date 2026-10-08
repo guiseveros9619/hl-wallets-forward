@@ -2,7 +2,9 @@ name: registro
 
 on:
   schedule:
-    - cron: "7 * * * *"
+    # quatro tentativas por hora: o agendador gratuito atrasa e pula execuções; o programa grava no máximo um
+    # registro por hora cheia (UTC), então as tentativas a mais não gravam nada
+    - cron: "7,22,37,52 * * * *"
   workflow_dispatch: {}
 
 permissions:

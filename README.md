@@ -1,6 +1,6 @@
 # Registro prospectivo de carteiras da Hyperliquid
 
-Este repositório anota, de hora em hora, as posições de três grupos de carteiras do ranking público da
+Este repositório anota, uma vez por hora, as posições de três grupos de carteiras do ranking público da
 Hyperliquid. O objetivo é responder com dados a uma pergunta só: **copiar quem aparece ganhando no ranking dá
 resultado depois dos custos?**
 
@@ -61,3 +61,9 @@ python wallets_forward.py --status
 - A tarefa agendada pode atrasar ou falhar; as horas sem registro ficam como lacunas e contam na cobertura.
 - O endereço do ranking não é uma página oficial documentada da Hyperliquid e pode mudar.
 - Uma carteira pode ter proteção em outra bolsa; o que aparece aqui é só a posição na Hyperliquid.
+
+## Mudanças na coleta
+- **2026-10-08, primeiro dia:** a tarefa agendada rodava uma vez por hora e o agendador gratuito do GitHub pulou
+  cinco das sete primeiras horas. A partir de agora ela tenta quatro vezes por hora, e o programa grava no máximo um
+  registro por hora cheia (UTC). A regra de escolha e a de avaliação não mudaram; as horas já perdidas continuam
+  contando como lacunas.
