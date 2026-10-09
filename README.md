@@ -67,3 +67,6 @@ python wallets_forward.py --status
   cinco das sete primeiras horas. A partir de agora ela tenta quatro vezes por hora, e o programa grava no máximo um
   registro por hora cheia (UTC). A regra de escolha e a de avaliação não mudaram; as horas já perdidas continuam
   contando como lacunas.
+- **2026-10-09:** mesmo com quatro tentativas por hora, o agendador do GitHub só disparou três vezes em 22 horas
+  (repositório novo). Foram acrescentadas duas tarefas iguais em minutos diferentes (doze tentativas por hora no
+  total, todas na mesma fila). O limite de um registro por hora cheia continua valendo.
